@@ -36,13 +36,13 @@ rank actually works.
   preferred, seat count decremented on assignment.
 
 ### Phase 6 — Experience (done)
-- Glassmorphism design system with light/dark themes.
+- Calm neumorphic design system with light/dark themes and mobile bottom navigation.
 - Realtime in-app notifications per role.
 
 ### Phase 7 — Payments & launch readiness (next)
 1. Choose a payment provider and implement the charge + payout flow.
 2. Replace placeholder trust/marketing claims with verified ones.
-3. Real push notifications via service worker.
+3. Extend the PWA service worker with real push notifications.
 4. Testing, accessibility, and SEO passes.
 5. Seed real rank and fare data; disable email auto-confirm.
 

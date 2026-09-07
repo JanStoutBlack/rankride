@@ -10,8 +10,7 @@ import { Navigate, Outlet, useLocation } from 'react-router-dom';
 
 import { useAuth } from '@/hooks/useAuth';
 import { Loader2 } from 'lucide-react';
-
-type AppRole = 'customer' | 'driver' | 'owner';
+import { homeForRole, type AppRole } from '@/lib/roles';
 
 interface ProtectedRouteProps {
   allowedRoles?: AppRole[];
@@ -35,11 +34,7 @@ export function ProtectedRoute({ allowedRoles }: ProtectedRouteProps) {
 
   if (allowedRoles && role && !allowedRoles.includes(role)) {
     // Redirect to appropriate dashboard based on role
-    const redirectPath = role === 'customer' 
-      ? '/customer/booking' 
-      : role === 'driver' 
-        ? '/driver/trips' 
-        : '/owner/dashboard';
+    const redirectPath = homeForRole(role);
     
     return <Navigate to={redirectPath} replace />;
   }

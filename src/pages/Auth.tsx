@@ -7,8 +7,9 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { toast } from '@/hooks/use-toast';
-import { Car, Loader2, Sparkles, Shield, Lock, Building2 } from 'lucide-react';
+import { Car, Loader2, Sparkles } from 'lucide-react';
 import { z } from 'zod';
+import { homeForRole } from '@/lib/roles';
 
 const loginSchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -20,30 +21,25 @@ const signupSchema = z.object({
   password: z.string().min(6, 'Password must be at least 6 characters'),
   full_name: z.string().min(2, 'Name must be at least 2 characters'),
   phone: z.string().min(10, 'Phone number must be at least 10 digits'),
-  role: z.enum(['customer', 'owner']),
+  role: z.literal('rider'),
 });
 
 export default function Auth() {
   const { user, role, signIn, signUp, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
-  
+
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
-  
+
   const [signupEmail, setSignupEmail] = useState('');
   const [signupPassword, setSignupPassword] = useState('');
   const [signupName, setSignupName] = useState('');
   const [signupPhone, setSignupPhone] = useState('');
-  const [signupRole, setSignupRole] = useState<'customer' | 'owner'>('customer');
+  const signupRole = 'rider' as const;
 
   if (user && role) {
-    const redirectPath = role === 'customer' 
-      ? '/customer/booking' 
-      : role === 'driver' 
-        ? '/driver/trips' 
-        : '/owner/dashboard';
-    return <Navigate to={redirectPath} replace />;
+    return <Navigate to={homeForRole(role)} replace />;
   }
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -52,9 +48,9 @@ export default function Auth() {
 
     try {
       loginSchema.parse({ email: loginEmail, password: loginPassword });
-      
+
       const { error } = await signIn(loginEmail, loginPassword);
-      
+
       if (error) {
         toast({
           title: 'Login Failed',
@@ -161,20 +157,20 @@ export default function Auth() {
 
         <Tabs defaultValue="login" className="w-full">
           <TabsList className="grid w-full grid-cols-2 glass-subtle rounded-xl p-1 mb-6">
-            <TabsTrigger 
-              value="login" 
+            <TabsTrigger
+              value="login"
               className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all"
             >
               Login
             </TabsTrigger>
-            <TabsTrigger 
+            <TabsTrigger
               value="signup"
               className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all"
             >
               Sign Up
             </TabsTrigger>
           </TabsList>
-          
+
           <TabsContent value="login" className="animate-fade-in">
             <form onSubmit={handleLogin} className="space-y-4">
               <div className="space-y-2">
@@ -201,9 +197,9 @@ export default function Auth() {
                   className="h-12 rounded-xl bg-secondary/50 border-0 focus-visible:ring-2 focus-visible:ring-primary/50"
                 />
               </div>
-              <Button 
-                type="submit" 
-                className="w-full h-12 rounded-xl text-base font-medium glow-primary hover:opacity-90 transition-opacity" 
+              <Button
+                type="submit"
+                className="w-full h-12 rounded-xl text-base font-medium glow-primary hover:opacity-90 transition-opacity"
                 disabled={loading}
               >
                 {loading ? <Loader2 className="h-5 w-5 animate-spin mr-2" /> : null}
@@ -211,7 +207,7 @@ export default function Auth() {
               </Button>
             </form>
           </TabsContent>
-          
+
           <TabsContent value="signup" className="animate-fade-in">
             <form onSubmit={handleSignup} className="space-y-4">
               <div className="space-y-2">
@@ -266,36 +262,24 @@ export default function Auth() {
                 <Label className="text-sm font-medium">I am a...</Label>
                 <RadioGroup
                   value={signupRole}
-                  onValueChange={(v) => setSignupRole(v as 'customer' | 'owner')}
-                  className="flex gap-3"
+                  className="grid grid-cols-1"
                 >
-                  <label 
-                    htmlFor="customer" 
+                  <label
+                    htmlFor="rider"
                     className={`flex-1 flex items-center justify-center gap-2 p-4 rounded-xl cursor-pointer transition-all ${
-                      signupRole === 'customer' 
-                        ? 'bg-primary text-primary-foreground shadow-lg' 
+                      signupRole === 'rider'
+                        ? 'bg-primary text-primary-foreground shadow-lg'
                         : 'bg-secondary/50 hover:bg-secondary'
                     }`}
                   >
-                    <RadioGroupItem value="customer" id="customer" className="sr-only" />
-                    <span className="font-medium">Customer</span>
-                  </label>
-                  <label 
-                    htmlFor="owner" 
-                    className={`flex-1 flex items-center justify-center gap-2 p-4 rounded-xl cursor-pointer transition-all ${
-                      signupRole === 'owner' 
-                        ? 'bg-primary text-primary-foreground shadow-lg' 
-                        : 'bg-secondary/50 hover:bg-secondary'
-                    }`}
-                  >
-                    <RadioGroupItem value="owner" id="owner" className="sr-only" />
-                    <span className="font-medium">Taxi Owner</span>
+                    <RadioGroupItem value="rider" id="rider" className="sr-only" />
+                    <span className="font-medium">Rider</span>
                   </label>
                 </RadioGroup>
               </div>
-              <Button 
-                type="submit" 
-                className="w-full h-12 rounded-xl text-base font-medium glow-primary hover:opacity-90 transition-opacity" 
+              <Button
+                type="submit"
+                className="w-full h-12 rounded-xl text-base font-medium glow-primary hover:opacity-90 transition-opacity"
                 disabled={loading}
               >
                 {loading ? <Loader2 className="h-5 w-5 animate-spin mr-2" /> : null}
@@ -305,36 +289,9 @@ export default function Auth() {
           </TabsContent>
         </Tabs>
 
-        {/* Trust indicators */}
-        <div className="mt-8 pt-6 border-t border-border/30 space-y-4">
-          <div className="flex items-center justify-center gap-4 text-xs text-muted-foreground">
-            <div className="flex items-center gap-1.5">
-              <Shield className="h-3.5 w-3.5 text-success" />
-              <span>256-bit SSL</span>
-            </div>
-            <div className="w-px h-3 bg-border" />
-            <div className="flex items-center gap-1.5">
-              <Lock className="h-3.5 w-3.5 text-primary" />
-              <span>PCI Compliant</span>
-            </div>
-          </div>
-          <div className="text-center">
-            <p className="text-xs text-muted-foreground flex items-center justify-center gap-1.5 mb-2">
-              <Building2 className="h-3 w-3" />
-              Trusted by major banks
-            </p>
-            <div className="flex flex-wrap justify-center gap-2">
-              {['FNB', 'Standard Bank', 'ABSA', 'Nedbank', 'Capitec'].map((bank) => (
-                <span
-                  key={bank}
-                  className="px-2 py-1 rounded-md bg-secondary/50 text-[10px] font-medium text-muted-foreground"
-                >
-                  {bank}
-                </span>
-              ))}
-            </div>
-          </div>
-        </div>
+        <p className="mt-8 border-t border-border/40 pt-6 text-center text-xs text-muted-foreground">
+          Simple trips, clear fares, less waiting.
+        </p>
       </div>
     </div>
   );

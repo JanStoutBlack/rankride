@@ -44,7 +44,7 @@ const App = () => (
             <Route path="/auth" element={<Auth />} />
             
             {/* Customer Routes */}
-            <Route element={<ProtectedRoute allowedRoles={['customer']} />}>
+            <Route element={<ProtectedRoute allowedRoles={['rider', 'customer']} />}>
               <Route path="/customer/booking" element={<CustomerBooking />} />
               <Route path="/customer/trips" element={<CustomerTrips />} />
             </Route>
@@ -57,7 +57,7 @@ const App = () => (
             </Route>
             
             {/* Owner Routes */}
-            <Route element={<ProtectedRoute allowedRoles={['owner']} />}>
+            <Route element={<ProtectedRoute allowedRoles={['admin', 'superadmin', 'owner']} />}>
               <Route path="/owner/dashboard" element={<OwnerDashboard />} />
               <Route path="/owner/vehicles" element={<OwnerVehicles />} />
               <Route path="/owner/drivers" element={<OwnerDrivers />} />

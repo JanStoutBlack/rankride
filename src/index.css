@@ -2,32 +2,32 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Apple Glass Design System - Glassmorphism */
+/* Calm neumorphic design system */
 
 @layer base {
   :root {
     /* Apple-inspired color palette */
-    --background: 220 20% 97%;
-    --foreground: 220 20% 10%;
+    --background: 210 25% 94%;
+    --foreground: 214 24% 18%;
 
-    --card: 0 0% 100%;
+    --card: 210 25% 94%;
     --card-foreground: 220 20% 10%;
 
     --popover: 0 0% 100%;
     --popover-foreground: 220 20% 10%;
 
     /* Vibrant blue accent like Apple */
-    --primary: 211 100% 50%;
+    --primary: 174 52% 38%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 220 14% 96%;
+    --secondary: 210 22% 90%;
     --secondary-foreground: 220 20% 20%;
 
     --muted: 220 14% 96%;
     --muted-foreground: 220 10% 46%;
 
-    --accent: 211 100% 95%;
-    --accent-foreground: 211 100% 40%;
+    --accent: 174 35% 86%;
+    --accent-foreground: 174 55% 28%;
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
@@ -35,7 +35,7 @@
     /* Glass effect borders */
     --border: 220 20% 88%;
     --input: 220 20% 92%;
-    --ring: 211 100% 50%;
+    --ring: 174 52% 38%;
 
     --radius: 1rem;
 
@@ -47,9 +47,9 @@
     --glass-shadow: 220 60% 50%;
 
     /* Gradient mesh background */
-    --gradient-1: 211 100% 85%;
-    --gradient-2: 280 100% 90%;
-    --gradient-3: 170 100% 88%;
+    --gradient-1: 174 28% 89%;
+    --gradient-2: 210 24% 92%;
+    --gradient-3: 36 30% 92%;
 
     /* Sidebar */
     --sidebar-background: 0 0% 100%;
@@ -69,16 +69,16 @@
   }
 
   .dark {
-    --background: 220 25% 6%;
+    --background: 214 22% 12%;
     --foreground: 220 20% 98%;
 
-    --card: 220 25% 10%;
+    --card: 214 22% 12%;
     --card-foreground: 220 20% 98%;
 
     --popover: 220 25% 10%;
     --popover-foreground: 220 20% 98%;
 
-    --primary: 211 100% 60%;
+    --primary: 172 48% 55%;
     --primary-foreground: 220 25% 6%;
 
     --secondary: 220 20% 15%;
@@ -133,37 +133,37 @@
   body {
     @apply bg-background text-foreground antialiased;
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    min-width: 320px;
   }
 }
 
 @layer components {
-  /* Glass card effect */
+  /* Legacy surface names now use the shared soft, tactile treatment. */
   .glass {
     @apply relative overflow-hidden;
-    background: hsl(var(--glass-bg) / var(--glass-opacity));
-    backdrop-filter: blur(var(--glass-blur));
-    -webkit-backdrop-filter: blur(var(--glass-blur));
-    border: 1px solid hsl(var(--glass-border) / 0.3);
-    box-shadow: 
-      0 4px 24px -1px hsl(var(--glass-shadow) / 0.1),
-      0 0 0 1px hsl(var(--glass-border) / 0.1) inset;
+    background: hsl(var(--background));
+    border: 1px solid hsl(var(--foreground) / 0.04);
+    box-shadow: 10px 10px 24px hsl(var(--foreground) / 0.11), -10px -10px 24px hsl(var(--card) / 0.9);
   }
 
   .glass-subtle {
     @apply relative overflow-hidden;
-    background: hsl(var(--glass-bg) / 0.5);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid hsl(var(--glass-border) / 0.2);
+    background: hsl(var(--background));
+    border: 1px solid hsl(var(--foreground) / 0.035);
+    box-shadow: inset 3px 3px 7px hsl(var(--foreground) / 0.09), inset -3px -3px 7px hsl(var(--card) / 0.85);
   }
+
+  .neu-surface { background: hsl(var(--background) / 0.96); border: 1px solid hsl(var(--foreground) / 0.04); box-shadow: 8px 8px 20px hsl(var(--foreground) / 0.12), -8px -8px 20px hsl(var(--card) / 0.9); }
+  .neu-icon { box-shadow: 4px 4px 9px hsl(var(--foreground) / 0.1), -4px -4px 9px hsl(var(--card) / 0.9); }
+  .neu-nav-item { @apply flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-muted-foreground transition-colors; }
+  .neu-nav-item:hover { @apply text-foreground; }
+  .neu-nav-item.is-active { @apply text-primary; box-shadow: inset 3px 3px 7px hsl(var(--foreground) / 0.1), inset -3px -3px 7px hsl(var(--card) / 0.9); }
+  .mobile-nav-item { @apply flex min-w-14 flex-1 flex-col items-center justify-center gap-0.5 rounded-xl px-1 py-2 text-[0.68rem] font-medium text-muted-foreground transition-all; }
+  .mobile-nav-item.is-active { @apply text-primary; box-shadow: inset 3px 3px 7px hsl(var(--foreground) / 0.11), inset -3px -3px 7px hsl(var(--card) / 0.9); }
 
   /* Gradient mesh background */
   .gradient-mesh {
-    background: 
-      radial-gradient(at 20% 30%, hsl(var(--gradient-1)) 0, transparent 50%),
-      radial-gradient(at 80% 20%, hsl(var(--gradient-2)) 0, transparent 50%),
-      radial-gradient(at 50% 80%, hsl(var(--gradient-3)) 0, transparent 50%),
-      hsl(var(--background));
+    background: hsl(var(--background));
     background-attachment: fixed;
   }
 

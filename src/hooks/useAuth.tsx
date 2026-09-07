@@ -17,8 +17,7 @@ import { createContext, useContext, useEffect, useState, ReactNode } from 'react
 
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
-
-type AppRole = 'customer' | 'driver' | 'owner';
+import type { AppRole } from '@/lib/roles';
 
 interface Profile {
   id: string;
@@ -130,7 +129,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     metadata: { full_name: string; phone: string; role: AppRole }
   ) => {
     // Prevent driver self-registration
-    const safeRole = metadata.role === 'driver' ? 'customer' : metadata.role;
+    const safeRole: AppRole = metadata.role === 'rider' ? 'rider' : 'rider';
     
     const { error } = await supabase.auth.signUp({
       email,

@@ -4,7 +4,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { StatusBadge } from '@/components/StatusBadge';
 import { QRCodeDisplay } from '@/components/QRCodeDisplay';
-import { TrustBadges } from '@/components/TrustBadges';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -200,8 +199,6 @@ export default function CustomerTrips() {
           </div>
         )}
 
-        {/* Trust badges */}
-        <TrustBadges />
       </div>
     </AppLayout>
   );
