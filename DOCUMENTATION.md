@@ -2,7 +2,7 @@
 
 TaxiRank is a web app for South African minibus-taxi ranks. It connects three
 roles: **customers** (book a seat, pay, carry a QR ticket), **drivers** (see
-today's trips, scan tickets, report issues) and **owners** (fleet dashboard,
+today's trips, scan tickets, report issues) and **admins/superadmins** (fleet dashboard,
 drivers, vehicles, maintenance).
 
 ## Stack
@@ -12,7 +12,7 @@ drivers, vehicles, maintenance).
 | UI | React 18 + TypeScript, Vite, Tailwind CSS, shadcn/ui |
 | Routing | react-router-dom v6 |
 | Data / auth | Lovable Cloud (Supabase Postgres, Auth, Realtime, Edge Functions) |
-| Styling direction | Glassmorphism ("Apple Glass"): frosted cards, translucent buttons, gradient mesh backgrounds, light/dark themes |
+| Styling direction | Calm neumorphism: tactile raised/inset surfaces, restrained color, light/dark themes, mobile-first navigation |
 
 ## Directory map
 
@@ -55,7 +55,7 @@ supabase/
 - **profiles** — one row per auth user: `id` (FK `auth.users`), `phone`,
   `full_name`, timestamps.
 - **user_roles** — `(user_id, role)` with enum `app_role`
-  (`customer | driver | owner`). Roles live **only** here; never on `profiles`.
+  (`rider | driver | admin | superadmin`; legacy `customer` and `owner` values remain during migration). Roles live **only** here; never on `profiles`.
 - **ranks** — `name`, `location`, optional coordinates.
 - **vehicles** — `plate`, `capacity`, `rank_id`, `driver_id`,
   `current_destination`, `available_seats`, `is_active`.
@@ -75,9 +75,9 @@ select public.has_role(auth.uid(), 'owner');
 ```
 
 Rules of thumb enforced by policy:
-- Customers read/write only their own trips and profile.
+- Riders read/write only their own trips and profile.
 - Drivers read trips assigned to their vehicle and may update trip status.
-- Owners read fleet-wide data and manage vehicles, drivers and maintenance.
+- Admins read fleet-wide data and manage vehicles, drivers and maintenance; superadmins have the same current UI pending platform-level administration.
 - `vehicles` is readable by authenticated users only (no anonymous access).
 
 ## Edge Functions
@@ -123,3 +123,9 @@ do not edit `.env` or `src/integrations/supabase/client.ts` / `types.ts`.
 Payments are not wired to a real provider yet; the trust badges are marketing
 copy and must not be shown publicly until real agreements and a real payment
 integration exist. See `TODO.md`.
+
+## Installable app and deployment
+
+The production build generates a web app manifest and service worker so TaxiRank can be installed from a supported browser. The current offline cache covers the application shell; business data and payment operations still require a connection. Netlify build and SPA routing settings live in `netlify.toml`.
+
+The proposed Firebase and Paystack backend is intentionally planning-only. See `FIREBASE_PAYSTACK_MIGRATION.md`; Supabase remains the active backend until a funded migration is approved.

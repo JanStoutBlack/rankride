@@ -67,7 +67,7 @@ export function useNotifications() {
             )
             .subscribe();
         }
-      } else if (role === 'customer') {
+      } else if (role === 'rider' || role === 'customer') {
         // Subscribe to trip status updates for this customer
         channel = supabase
           .channel('customer-notifications')
@@ -107,7 +107,7 @@ export function useNotifications() {
             }
           )
           .subscribe();
-      } else if (role === 'owner') {
+      } else if (role === 'admin' || role === 'superadmin' || role === 'owner') {
         // Subscribe to new maintenance issues
         channel = supabase
           .channel('owner-notifications')
