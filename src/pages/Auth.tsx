@@ -25,7 +25,7 @@ const signupSchema = z.object({
 });
 
 export default function Auth() {
-  const { user, role, signIn, signUp, loading: authLoading } = useAuth();
+  const { user, role, signIn, signInWithGoogle, signUp, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
 
@@ -124,6 +124,21 @@ export default function Auth() {
     }
   };
 
+  const handleGoogleSignIn = async () => {
+    setLoading(true);
+    const { error } = await signInWithGoogle();
+    if (error) {
+      toast({
+        title: 'Google sign-in failed',
+        description: error.message,
+        variant: 'destructive',
+      });
+    } else {
+      toast({ title: 'Welcome!', description: 'You have signed in with Google.' });
+    }
+    setLoading(false);
+  };
+
   if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center gradient-mesh">
@@ -156,6 +171,23 @@ export default function Auth() {
         </div>
 
         <Tabs defaultValue="login" className="w-full">
+          <Button
+            type="button"
+            variant="outline"
+            className="mb-4 h-12 w-full rounded-xl bg-background/60 text-base font-medium"
+            onClick={handleGoogleSignIn}
+            disabled={loading}
+          >
+            {loading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : (
+              <span aria-hidden="true" className="mr-2 flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 font-bold text-primary">G</span>
+            )}
+            Continue with Google
+          </Button>
+          <div className="mb-4 flex items-center gap-3" aria-hidden="true">
+            <span className="h-px flex-1 bg-border" />
+            <span className="text-xs uppercase tracking-wider text-muted-foreground">or use email</span>
+            <span className="h-px flex-1 bg-border" />
+          </div>
           <TabsList className="grid w-full grid-cols-2 glass-subtle rounded-xl p-1 mb-6">
             <TabsTrigger
               value="login"

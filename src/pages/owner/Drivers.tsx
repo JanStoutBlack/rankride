@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { toast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
+import { firebaseClient as supabase } from '@/integrations/firebase/client';
 import { Users, Plus, Loader2, User } from 'lucide-react';
 
 interface Driver {
@@ -42,10 +42,8 @@ export default function OwnerDrivers() {
   }, []);
 
   const fetchData = async () => {
-    const { data: roleData } = await supabase
-      .from('user_roles')
-      .select('user_id')
-      .eq('role', 'driver');
+    const { data: directory } = await supabase.functions.invoke('listDrivers');
+    const roleData = directory?.drivers as Array<{ user_id: string }> | undefined;
 
     if (roleData && roleData.length > 0) {
       const driverIds = roleData.map(r => r.user_id);

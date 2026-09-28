@@ -11,7 +11,7 @@
  */
 import { useEffect } from 'react';
 
-import { supabase } from '@/integrations/supabase/client';
+import { firebaseClient as supabase } from '@/integrations/firebase/client';
 import { useAuth } from './useAuth';
 import { toast } from '@/hooks/use-toast';
 import { Bell, Car, CheckCircle, XCircle, Play, MapPin } from 'lucide-react';
@@ -67,7 +67,7 @@ export function useNotifications() {
             )
             .subscribe();
         }
-      } else if (role === 'rider' || role === 'customer') {
+      } else if (role === 'rider') {
         // Subscribe to trip status updates for this customer
         channel = supabase
           .channel('customer-notifications')
@@ -107,7 +107,7 @@ export function useNotifications() {
             }
           )
           .subscribe();
-      } else if (role === 'admin' || role === 'superadmin' || role === 'owner') {
+      } else if (role === 'admin' || role === 'superadmin') {
         // Subscribe to new maintenance issues
         channel = supabase
           .channel('owner-notifications')
