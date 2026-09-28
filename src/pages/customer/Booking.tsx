@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { QRCodeDisplay } from '@/components/QRCodeDisplay';
 import { StatusBadge } from '@/components/StatusBadge';
 import { toast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
+import { firebaseClient as supabase } from '@/integrations/firebase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { MapPin, Navigation, Calculator, Loader2, CheckCircle2, Car, RefreshCw, Ticket, Sparkles } from 'lucide-react';
 

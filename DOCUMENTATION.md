@@ -1,131 +1,66 @@
 # TaxiRank — Technical Documentation
 
-TaxiRank is a web app for South African minibus-taxi ranks. It connects three
-roles: **customers** (book a seat, pay, carry a QR ticket), **drivers** (see
-today's trips, scan tickets, report issues) and **admins/superadmins** (fleet dashboard,
-drivers, vehicles, maintenance).
+TaxiRank is a React web app for South African minibus-taxi ranks. Riders book seats and carry QR tickets, drivers manage assigned trips, admins operate the fleet, and superadmins control the platform.
 
 ## Stack
 
 | Layer | Technology |
 | --- | --- |
-| UI | React 18 + TypeScript, Vite, Tailwind CSS, shadcn/ui |
-| Routing | react-router-dom v6 |
-| Data / auth | Lovable Cloud (Supabase Postgres, Auth, Realtime, Edge Functions) |
-| Styling direction | Calm neumorphism: tactile raised/inset surfaces, restrained color, light/dark themes, mobile-first navigation |
+| UI | React 18, TypeScript, Vite, Tailwind CSS, shadcn/ui |
+| Authentication | Firebase Authentication |
+| Data | Cloud Firestore and realtime listeners |
+| Trusted operations | Firebase Cloud Functions (TypeScript) |
+| Hosting | Firebase Hosting-compatible SPA build |
 
-## Directory map
+## Firebase layout
 
-```text
-src/
-  App.tsx                 Route table + global providers
-  main.tsx                Entry point, ThemeProvider
-  index.css               Design tokens (HSL variables), glass utilities
-  hooks/
-    useAuth.tsx           Auth context: session, profile, role, sign in/up/out
-    useNotifications.tsx  Realtime toasts per role
-    useTheme.tsx          Light/dark theme context
-  components/
-    AppLayout.tsx         Shell: header, nav, theme toggle
-    ProtectedRoute.tsx    Role-gated route wrapper
-    QRCodeDisplay.tsx     Renders ticket / driver QR codes
-    QRScanner.tsx         Camera-based QR scanning
-    StatusBadge.tsx       Trip status pill
-    TrustBadges.tsx       Payment/security trust indicators
-    ui/                   shadcn primitives
-  pages/
-    Auth.tsx              Login + signup (customer/owner only)
-    Index.tsx             Landing page
-    customer/Booking.tsx  Rank + destination -> fare -> trip + QR ticket
-    customer/Trips.tsx    Trip history, live updates
-    driver/Trips.tsx      Today's trips for the driver's vehicle
-    driver/Scan.tsx       Scan customer ticket -> mark boarded
-    driver/QRCode.tsx     Driver's own payment QR
-    owner/Dashboard.tsx   Totals: trips, revenue, vehicles
-    owner/Vehicles.tsx    Fleet CRUD
-    owner/Drivers.tsx     Create/manage drivers
-    owner/Maintenance.tsx Issue log
-supabase/
-  migrations/             SQL schema history
-  functions/              Edge Functions (Deno)
-```
+- `src/integrations/firebase/config.ts` initializes the provided `rank-ride` Firebase project.
+- `src/integrations/firebase/client.ts` is the browser data and realtime adapter used by the existing pages.
+- `firestore.rules` is the deny-by-default access policy.
+- `firestore.indexes.json` contains the compound trip-history indexes.
+- `functions/src/index.ts` contains trusted fare, dispatch, maintenance, account, role, and analytics operations.
 
-## Data model (public schema)
+The app uses `profiles`, `user_roles`, `ranks`, `fares`, `vehicles`, `trips`, and `maintenance_logs` collections. Roles live in protected `user_roles/{uid}` documents with one `role` field: `rider`, `driver`, `admin`, or `superadmin`. They are never stored on editable profile documents.
 
-- **profiles** — one row per auth user: `id` (FK `auth.users`), `phone`,
-  `full_name`, timestamps.
-- **user_roles** — `(user_id, role)` with enum `app_role`
-  (`rider | driver | admin | superadmin`; legacy `customer` and `owner` values remain during migration). Roles live **only** here; never on `profiles`.
-- **ranks** — `name`, `location`, optional coordinates.
-- **vehicles** — `plate`, `capacity`, `rank_id`, `driver_id`,
-  `current_destination`, `available_seats`, `is_active`.
-- **trips** — `customer_id`, `vehicle_id`, `origin_rank_id`, `destination`,
-  `fare`, `status` (enum `trip_status`: `pending | assigned | in_progress |
-  completed | cancelled`).
-- **fares** — preset fare per `rank_id` + destination.
-- **maintenance_logs** — `vehicle_id`, `reported_by`, `description`, `status`.
+## Access levels
 
-### Authorization
+- **Rider:** may create and read only their own trips, and edit only their own role-free profile.
+- **Driver:** may see trips for their assigned vehicle and update boarding/trip status.
+- **Admin:** may manage fleet data, drivers, fares, maintenance, and view operational analytics.
+- **Superadmin:** has admin access plus platform-level user-role and deletion controls.
 
-Every table has RLS enabled with explicit `GRANT`s. Role checks use a
-security-definer function so policies never recurse:
+Public email/password signup and first-time Google sign-in always create a rider. Admins create driver accounts through a callable function. A superadmin changes roles from **Users & roles** in the dashboard. Firestore rules independently enforce access even if someone bypasses the page navigation.
 
-```sql
-select public.has_role(auth.uid(), 'owner');
-```
+### Bootstrap the first superadmin
 
-Rules of thumb enforced by policy:
-- Riders read/write only their own trips and profile.
-- Drivers read trips assigned to their vehicle and may update trip status.
-- Admins read fleet-wide data and manage vehicles, drivers and maintenance; superadmins have the same current UI pending platform-level administration.
-- `vehicles` is readable by authenticated users only (no anonymous access).
+No local script or service-account key is required. In Firebase Console, open Firestore and create `user_roles/{firebase-auth-uid}` with a string field named `role` and value `superadmin`. Sign out and back in; the dashboard then exposes **Users & roles**, where that superadmin can assign all later roles. Firebase Console access is the trusted bootstrap boundary.
 
-## Edge Functions
+## Trusted functions
 
-| Function | Purpose | Auth |
+| Callable | Purpose | Access |
 | --- | --- | --- |
-| `calculate-fare` | Returns the preset fare for a rank + destination, falling back to a distance estimate | JWT required |
-| `assign-trip` | Picks the next active vehicle at the origin rank with free seats (preferring a matching destination), assigns the trip and decrements seats | JWT required |
-| `maintenance` | `POST` create issue (driver/owner), `GET` list issues, `PATCH` update status | JWT required |
-| `create-driver` | Owner-only: creates the driver auth user, sets the `driver` role, links the vehicle | JWT + owner role |
+| `calculateFare` | Look up a configured fare or provide the existing estimate | Signed-in users |
+| `assignTrip` | Atomically select a vehicle and reserve one seat | Rider/admin/superadmin |
+| `maintenance` | Report or update a vehicle issue | Driver/admin; updates admin-only |
+| `createDriver` | Create an account, assign its driver role, and optionally link a vehicle | Admin/superadmin |
+| `listDrivers` | Return the driver directory without exposing all Auth users | Admin/superadmin |
+| `listUsers` | Return the Auth user directory and protected roles | Superadmin only |
+| `manageUserRole` | Update a protected user role | Superadmin only |
+| `adminAnalytics` | Return seven-day trips, revenue, completion, fleet, and issue totals | Admin/superadmin |
 
-All functions verify the `Authorization` bearer token before touching the
-database and validate UUID-shaped inputs.
+Dispatch uses a Firestore transaction so concurrent bookings cannot reserve the final seat twice.
 
-## Realtime
-
-`useNotifications` subscribes per role: drivers get new-assignment toasts,
-customers get status-change toasts, owners get maintenance alerts. Trip lists
-also subscribe to their own filtered channel.
-
-Subscription rules (important — violating them causes a runtime crash):
-1. Create the channel inside `useEffect`, never in render or inside a helper
-   called from render.
-2. Attach every `.on(...)` **before** `.subscribe()`.
-3. Use a unique channel name per subscriber (e.g. `customer-trips-${userId}`).
-4. Always `supabase.removeChannel(channel)` in the cleanup function.
-
-## Local development
+## Local verification and deployment
 
 ```bash
 npm install
-npm run dev      # http://localhost:8080
+npm run dev
 npm run lint
 npm run build
+npm --prefix functions install
+npm --prefix functions run build
+firebase emulators:start
+firebase deploy --only firestore,functions,hosting
 ```
 
-Backend environment variables (`VITE_SUPABASE_URL`,
-`VITE_SUPABASE_PUBLISHABLE_KEY`, `VITE_SUPABASE_PROJECT_ID`) are generated —
-do not edit `.env` or `src/integrations/supabase/client.ts` / `types.ts`.
-
-## Known gaps
-
-Payments are not wired to a real provider yet; the trust badges are marketing
-copy and must not be shown publicly until real agreements and a real payment
-integration exist. See `TODO.md`.
-
-## Installable app and deployment
-
-The production build generates a web app manifest and service worker so TaxiRank can be installed from a supported browser. The current offline cache covers the application shell; business data and payment operations still require a connection. Netlify build and SPA routing settings live in `netlify.toml`.
-
-The proposed Firebase and Paystack backend is intentionally planning-only. See `FIREBASE_PAYSTACK_MIGRATION.md`; Supabase remains the active backend until a funded migration is approved.
+The Firebase web configuration identifies the project and is safe to include in the browser bundle; authorization is provided by Authentication, protected role documents, Firestore rules, and callable-function checks. Privileged Admin SDK credentials must never be placed in the frontend.

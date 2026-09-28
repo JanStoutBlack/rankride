@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import {
   Bell, Car, ClipboardList, LayoutDashboard, LogOut, MapPin,
-  QrCode, ScanLine, Users, Wrench,
+  QrCode, ScanLine, ShieldCheck, Users, Wrench,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { AppRole } from '@/lib/roles';
@@ -24,14 +24,13 @@ const driverNav: NavItem[] = [
   { path: '/driver/qr', label: 'My QR code', shortLabel: 'My QR', icon: QrCode },
 ];
 const adminNav: NavItem[] = [
-  { path: '/owner/dashboard', label: 'Dashboard', shortLabel: 'Home', icon: LayoutDashboard },
-  { path: '/owner/vehicles', label: 'Vehicles', shortLabel: 'Vehicles', icon: Car },
-  { path: '/owner/drivers', label: 'Drivers', shortLabel: 'Drivers', icon: Users },
-  { path: '/owner/maintenance', label: 'Maintenance', shortLabel: 'Issues', icon: Wrench },
+  { path: '/admin/dashboard', label: 'Dashboard', shortLabel: 'Home', icon: LayoutDashboard },
+  { path: '/admin/vehicles', label: 'Vehicles', shortLabel: 'Vehicles', icon: Car },
+  { path: '/admin/drivers', label: 'Drivers', shortLabel: 'Drivers', icon: Users },
+  { path: '/admin/maintenance', label: 'Maintenance', shortLabel: 'Issues', icon: Wrench },
 ];
 const navItems: Record<AppRole, NavItem[]> = {
-  rider: riderNav, customer: riderNav, driver: driverNav,
-  admin: adminNav, superadmin: adminNav, owner: adminNav,
+  rider: riderNav, driver: driverNav, admin: adminNav, superadmin: adminNav,
 };
 
 export function AppLayout({ children }: AppLayoutProps) {
@@ -41,7 +40,10 @@ export function AppLayout({ children }: AppLayoutProps) {
   useNotifications();
 
   const handleSignOut = async () => { await signOut(); navigate('/auth'); };
-  const currentNavItems = role ? navItems[role] : [];
+  const currentNavItems = role ? [
+    ...navItems[role],
+    ...(role === 'superadmin' ? [{ path: '/admin/users', label: 'Users & roles', shortLabel: 'Users', icon: ShieldCheck }] : []),
+  ] : [];
 
   return (
     <div className="min-h-screen gradient-mesh">

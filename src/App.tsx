@@ -29,6 +29,7 @@ import OwnerDashboard from "./pages/owner/Dashboard";
 import OwnerVehicles from "./pages/owner/Vehicles";
 import OwnerDrivers from "./pages/owner/Drivers";
 import OwnerMaintenance from "./pages/owner/Maintenance";
+import AdminUsers from "./pages/admin/Users";
 
 const queryClient = new QueryClient();
 
@@ -44,9 +45,12 @@ const App = () => (
             <Route path="/auth" element={<Auth />} />
             
             {/* Customer Routes */}
-            <Route element={<ProtectedRoute allowedRoles={['rider', 'customer']} />}>
+            <Route element={<ProtectedRoute allowedRoles={['rider']} />}>
               <Route path="/customer/booking" element={<CustomerBooking />} />
               <Route path="/customer/trips" element={<CustomerTrips />} />
+            </Route>
+            <Route element={<ProtectedRoute allowedRoles={['superadmin']} />}>
+              <Route path="/admin/users" element={<AdminUsers />} />
             </Route>
             
             {/* Driver Routes */}
@@ -57,11 +61,11 @@ const App = () => (
             </Route>
             
             {/* Owner Routes */}
-            <Route element={<ProtectedRoute allowedRoles={['admin', 'superadmin', 'owner']} />}>
-              <Route path="/owner/dashboard" element={<OwnerDashboard />} />
-              <Route path="/owner/vehicles" element={<OwnerVehicles />} />
-              <Route path="/owner/drivers" element={<OwnerDrivers />} />
-              <Route path="/owner/maintenance" element={<OwnerMaintenance />} />
+            <Route element={<ProtectedRoute allowedRoles={['admin', 'superadmin']} />}>
+              <Route path="/admin/dashboard" element={<OwnerDashboard />} />
+              <Route path="/admin/vehicles" element={<OwnerVehicles />} />
+              <Route path="/admin/drivers" element={<OwnerDrivers />} />
+              <Route path="/admin/maintenance" element={<OwnerMaintenance />} />
             </Route>
             
             <Route path="*" element={<NotFound />} />

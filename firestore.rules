@@ -1,0 +1,59 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() { return request.auth != null; }
+    function role() {
+      return get(/databases/$(database)/documents/user_roles/$(request.auth.uid)).data.role;
+    }
+    function isAdmin() { return signedIn() && role() in ['admin', 'superadmin']; }
+    function isSuperadmin() { return signedIn() && role() == 'superadmin'; }
+    function isDriver() { return signedIn() && role() == 'driver'; }
+    function assignedVehicle(vehicleId) {
+      return get(/databases/$(database)/documents/vehicles/$(vehicleId)).data.driver_id == request.auth.uid;
+    }
+
+    match /user_roles/{uid} {
+      allow read: if signedIn() && (uid == request.auth.uid || isSuperadmin());
+      allow create: if signedIn() && ((uid == request.auth.uid && request.resource.data.role == 'rider') || isSuperadmin());
+      allow update, delete: if isSuperadmin();
+    }
+
+    match /profiles/{uid} {
+      allow read: if signedIn() && (uid == request.auth.uid || isAdmin());
+      allow create, update: if signedIn() && uid == request.auth.uid
+        && !request.resource.data.keys().hasAny(['role', 'claims']);
+      allow delete: if isSuperadmin();
+    }
+    match /ranks/{id} {
+      allow read: if signedIn();
+      allow write: if isAdmin();
+    }
+    match /fares/{id} {
+      allow read: if signedIn();
+      allow write: if isAdmin();
+    }
+    match /vehicles/{id} {
+      allow read: if signedIn();
+      allow create, delete: if isAdmin();
+      allow update: if isAdmin() || (isDriver() && resource.data.driver_id == request.auth.uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['available_seats', 'updated_at']));
+    }
+    match /trips/{id} {
+      allow create: if signedIn() && role() == 'rider'
+        && request.resource.data.customer_id == request.auth.uid
+        && request.resource.data.status == 'pending';
+      allow read: if signedIn() && (isAdmin() || resource.data.customer_id == request.auth.uid
+        || (isDriver() && assignedVehicle(resource.data.vehicle_id)));
+      allow update: if isAdmin() || (isDriver() && assignedVehicle(resource.data.vehicle_id)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'updated_at']));
+      allow delete: if isSuperadmin();
+    }
+    match /maintenance_logs/{id} {
+      allow read: if isAdmin() || (isDriver() && resource.data.reported_by == request.auth.uid);
+      allow create: if isAdmin() || (isDriver() && request.resource.data.reported_by == request.auth.uid);
+      allow update: if isAdmin();
+      allow delete: if isSuperadmin();
+    }
+    match /{document=**} { allow read, write: if false; }
+  }
+}
