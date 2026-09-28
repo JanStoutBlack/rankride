@@ -29,6 +29,7 @@ import OwnerDashboard from "./pages/owner/Dashboard";
 import OwnerVehicles from "./pages/owner/Vehicles";
 import OwnerDrivers from "./pages/owner/Drivers";
 import OwnerMaintenance from "./pages/owner/Maintenance";
+import AdminUsers from "./pages/admin/Users";
 
 const queryClient = new QueryClient();
 
@@ -47,6 +48,9 @@ const App = () => (
             <Route element={<ProtectedRoute allowedRoles={['rider']} />}>
               <Route path="/customer/booking" element={<CustomerBooking />} />
               <Route path="/customer/trips" element={<CustomerTrips />} />
+            </Route>
+            <Route element={<ProtectedRoute allowedRoles={['superadmin']} />}>
+              <Route path="/admin/users" element={<AdminUsers />} />
             </Route>
             
             {/* Driver Routes */}

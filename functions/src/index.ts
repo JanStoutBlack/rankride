@@ -12,9 +12,10 @@ function requireAuth(request: { auth?: { uid: string; token: Record<string, unkn
   if (!request.auth) throw new HttpsError('unauthenticated', 'Please sign in first.');
   return request.auth;
 }
-function requireRole(request: Parameters<typeof requireAuth>[0], allowed: Role[]) {
+async function requireRole(request: Parameters<typeof requireAuth>[0], allowed: Role[]) {
   const auth = requireAuth(request);
-  const role = (auth.token.role || 'rider') as Role;
+  const roleSnapshot = await db.collection('user_roles').doc(auth.uid).get();
+  const role = (roleSnapshot.data()?.role || 'rider') as Role;
   if (!allowed.includes(role)) throw new HttpsError('permission-denied', 'You do not have access to this action.');
   return auth;
 }
@@ -33,14 +34,15 @@ export const calculateFare = onCall(async request => {
 });
 
 export const assignTrip = onCall(async request => {
-  const auth = requireRole(request, ['rider', 'admin', 'superadmin']);
+  const auth = await requireRole(request, ['rider', 'admin', 'superadmin']);
   const tripId = text(request.data.trip_id, 'Trip');
   const tripRef = db.collection('trips').doc(tripId);
   return db.runTransaction(async transaction => {
     const trip = await transaction.get(tripRef);
     if (!trip.exists) throw new HttpsError('not-found', 'Trip not found.');
     const tripData = trip.data()!;
-    if (auth.token.role === 'rider' || !auth.token.role) {
+    const role = (await db.collection('user_roles').doc(auth.uid).get()).data()?.role || 'rider';
+    if (role === 'rider') {
       if (tripData.customer_id !== auth.uid) throw new HttpsError('permission-denied', 'This is not your trip.');
     }
     const candidates = await db.collection('vehicles').where('rank_id', '==', tripData.origin_rank_id).where('is_active', '==', true).get();
@@ -57,9 +59,9 @@ export const assignTrip = onCall(async request => {
 });
 
 export const maintenance = onCall(async request => {
-  const auth = requireRole(request, ['driver', 'admin', 'superadmin']);
+  const auth = await requireRole(request, ['driver', 'admin', 'superadmin']);
   if (request.data.method === 'PATCH') {
-    requireRole(request, ['admin', 'superadmin']);
+    await requireRole(request, ['admin', 'superadmin']);
     const id = text(request.data.id, 'Issue');
     const status = text(request.data.status, 'Status');
     if (!['open', 'in_progress', 'resolved'].includes(status)) throw new HttpsError('invalid-argument', 'Invalid status.');
@@ -73,34 +75,46 @@ export const maintenance = onCall(async request => {
 });
 
 export const createDriver = onCall(async request => {
-  requireRole(request, ['admin', 'superadmin']);
+  await requireRole(request, ['admin', 'superadmin']);
   const email = text(request.data.email, 'Email');
   const password = text(request.data.password, 'Password');
   const fullName = text(request.data.full_name, 'Name');
   const user = await getAuth().createUser({ email, password, displayName: fullName });
-  await getAuth().setCustomUserClaims(user.uid, { role: 'driver' });
+  await db.collection('user_roles').doc(user.uid).set({ role: 'driver', updated_at: FieldValue.serverTimestamp() });
   await db.collection('profiles').doc(user.uid).set({ full_name: fullName, phone: String(request.data.phone || ''), created_at: FieldValue.serverTimestamp(), updated_at: FieldValue.serverTimestamp() });
   if (request.data.vehicle_id) await db.collection('vehicles').doc(String(request.data.vehicle_id)).update({ driver_id: user.uid, updated_at: FieldValue.serverTimestamp() });
   return { user_id: user.uid };
 });
 
 export const listDrivers = onCall(async request => {
-  requireRole(request, ['admin', 'superadmin']);
+  await requireRole(request, ['admin', 'superadmin']);
   const result = await getAuth().listUsers(1000);
-  return { drivers: result.users.filter(user => user.customClaims?.role === 'driver').map(user => ({ user_id: user.uid })) };
+  const roleDocs = await db.collection('user_roles').where('role', '==', 'driver').get();
+  const driverIds = new Set(roleDocs.docs.map(item => item.id));
+  return { drivers: result.users.filter(user => driverIds.has(user.uid)).map(user => ({ user_id: user.uid })) };
+});
+
+export const listUsers = onCall(async request => {
+  await requireRole(request, ['superadmin']);
+  const [result, roleDocs] = await Promise.all([getAuth().listUsers(1000), db.collection('user_roles').get()]);
+  const roleByUser = new Map(roleDocs.docs.map(item => [item.id, item.data().role || 'rider']));
+  return { users: result.users.map(user => ({
+    uid: user.uid, email: user.email || '', displayName: user.displayName || '',
+    disabled: user.disabled, role: roleByUser.get(user.uid) || 'rider',
+  })) };
 });
 
 export const manageUserRole = onCall(async request => {
-  requireRole(request, ['superadmin']);
+  await requireRole(request, ['superadmin']);
   const uid = text(request.data.uid, 'User');
   const role = text(request.data.role, 'Role') as Role;
   if (!roles.includes(role)) throw new HttpsError('invalid-argument', 'Invalid role.');
-  await getAuth().setCustomUserClaims(uid, { role });
+  await db.collection('user_roles').doc(uid).set({ role, updated_at: FieldValue.serverTimestamp() });
   return { uid, role };
 });
 
 export const adminAnalytics = onCall(async request => {
-  requireRole(request, ['admin', 'superadmin']);
+  await requireRole(request, ['admin', 'superadmin']);
   const since = Timestamp.fromMillis(Date.now() - 6 * 86400000);
   const [trips, vehicles, maintenance] = await Promise.all([
     db.collection('trips').where('created_at', '>=', since).get(),

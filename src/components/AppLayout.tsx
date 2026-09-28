@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import {
   Bell, Car, ClipboardList, LayoutDashboard, LogOut, MapPin,
-  QrCode, ScanLine, Users, Wrench,
+  QrCode, ScanLine, ShieldCheck, Users, Wrench,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { AppRole } from '@/lib/roles';
@@ -40,7 +40,10 @@ export function AppLayout({ children }: AppLayoutProps) {
   useNotifications();
 
   const handleSignOut = async () => { await signOut(); navigate('/auth'); };
-  const currentNavItems = role ? navItems[role] : [];
+  const currentNavItems = role ? [
+    ...navItems[role],
+    ...(role === 'superadmin' ? [{ path: '/admin/users', label: 'Users & roles', shortLabel: 'Users', icon: ShieldCheck }] : []),
+  ] : [];
 
   return (
     <div className="min-h-screen gradient-mesh">

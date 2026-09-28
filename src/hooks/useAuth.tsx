@@ -34,12 +34,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setRole(null);
     if (currentUser) {
       try {
-        const [token, profileSnapshot] = await Promise.all([
-          currentUser.getIdTokenResult(),
+        const [roleSnapshot, profileSnapshot] = await Promise.all([
+          getDoc(doc(db, 'user_roles', currentUser.uid)),
           getDoc(doc(db, 'profiles', currentUser.uid)),
         ]);
-        const claimedRole = token.claims.role;
-        setRole(typeof claimedRole === 'string' ? claimedRole as AppRole : 'rider');
+        const storedRole = roleSnapshot.data()?.role;
+        setRole(typeof storedRole === 'string' ? storedRole as AppRole : 'rider');
         if (profileSnapshot.exists()) setProfile({ id: currentUser.uid, ...profileSnapshot.data() } as Profile);
       } catch {
         setRole('rider');
@@ -56,10 +56,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const credential = await signInWithPopup(auth, new GoogleAuthProvider());
       const profileRef = doc(db, 'profiles', credential.user.uid);
-      const [profileSnapshot, token] = await Promise.all([
+      const [profileSnapshot, roleSnapshot] = await Promise.all([
         getDoc(profileRef),
-        credential.user.getIdTokenResult(),
+        getDoc(doc(db, 'user_roles', credential.user.uid)),
       ]);
+      if (!roleSnapshot.exists()) {
+        await setDoc(doc(db, 'user_roles', credential.user.uid), { role: 'rider', updated_at: serverTimestamp() });
+      }
       if (!profileSnapshot.exists()) {
         const newProfile = {
           full_name: credential.user.displayName || 'Rider',
@@ -70,8 +73,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         await setDoc(profileRef, newProfile);
         setProfile({ id: credential.user.uid, full_name: newProfile.full_name, phone: newProfile.phone });
       }
-      const claimedRole = token.claims.role;
-      setRole(typeof claimedRole === 'string' ? claimedRole as AppRole : 'rider');
+      const storedRole = roleSnapshot.data()?.role;
+      setRole(typeof storedRole === 'string' ? storedRole as AppRole : 'rider');
       return { error: null };
     } catch (cause) {
       return { error: cause instanceof Error ? cause : new Error('Unable to continue with Google') };
@@ -80,6 +83,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signUp: AuthContextType['signUp'] = async (email, password, metadata) => {
     try {
       const credential = await createUserWithEmailAndPassword(auth, email, password);
+      await setDoc(doc(db, 'user_roles', credential.user.uid), { role: 'rider', updated_at: serverTimestamp() });
       await setDoc(doc(db, 'profiles', credential.user.uid), {
         full_name: metadata.full_name, phone: metadata.phone,
         created_at: serverTimestamp(), updated_at: serverTimestamp(),
