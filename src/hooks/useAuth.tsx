@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import {
-  User, createUserWithEmailAndPassword, onAuthStateChanged,
-  signInWithEmailAndPassword, signOut as firebaseSignOut,
+  GoogleAuthProvider, User, createUserWithEmailAndPassword, onAuthStateChanged,
+  signInWithEmailAndPassword, signInWithPopup, signOut as firebaseSignOut,
 } from 'firebase/auth';
 import { doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore';
 import { auth, db } from '@/integrations/firebase/config';
@@ -16,6 +16,7 @@ interface AuthContextType {
   role: AppRole | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
+  signInWithGoogle: () => Promise<{ error: Error | null }>;
   signUp: (email: string, password: string, metadata: { full_name: string; phone: string; role: AppRole }) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
 }
@@ -51,6 +52,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try { await signInWithEmailAndPassword(auth, email, password); return { error: null }; }
     catch (cause) { return { error: cause instanceof Error ? cause : new Error('Unable to sign in') }; }
   };
+  const signInWithGoogle = async () => {
+    try {
+      const credential = await signInWithPopup(auth, new GoogleAuthProvider());
+      const profileRef = doc(db, 'profiles', credential.user.uid);
+      const [profileSnapshot, token] = await Promise.all([
+        getDoc(profileRef),
+        credential.user.getIdTokenResult(),
+      ]);
+      if (!profileSnapshot.exists()) {
+        const newProfile = {
+          full_name: credential.user.displayName || 'Rider',
+          phone: credential.user.phoneNumber || '',
+          created_at: serverTimestamp(),
+          updated_at: serverTimestamp(),
+        };
+        await setDoc(profileRef, newProfile);
+        setProfile({ id: credential.user.uid, full_name: newProfile.full_name, phone: newProfile.phone });
+      }
+      const claimedRole = token.claims.role;
+      setRole(typeof claimedRole === 'string' ? claimedRole as AppRole : 'rider');
+      return { error: null };
+    } catch (cause) {
+      return { error: cause instanceof Error ? cause : new Error('Unable to continue with Google') };
+    }
+  };
   const signUp: AuthContextType['signUp'] = async (email, password, metadata) => {
     try {
       const credential = await createUserWithEmailAndPassword(auth, email, password);
@@ -65,7 +91,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
   const signOut = async () => { await firebaseSignOut(auth); };
 
-  return <AuthContext.Provider value={{ user, session: user ? { user } : null, profile, role, loading, signIn, signUp, signOut }}>{children}</AuthContext.Provider>;
+  return <AuthContext.Provider value={{ user, session: user ? { user } : null, profile, role, loading, signIn, signInWithGoogle, signUp, signOut }}>{children}</AuthContext.Provider>;
 }
 export function useAuth() {
   const context = useContext(AuthContext);

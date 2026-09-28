@@ -29,7 +29,7 @@ The app uses `profiles`, `ranks`, `fares`, `vehicles`, `trips`, and `maintenance
 - **Admin:** may manage fleet data, drivers, fares, maintenance, and view operational analytics.
 - **Superadmin:** has admin access plus platform-level user-role and deletion controls.
 
-Public signup always creates a rider. Admins create driver accounts through a callable function. Only a superadmin can change a user's signed role claim. Firestore rules independently enforce access even if someone bypasses the page navigation.
+Public email/password signup and first-time Google sign-in always create a rider. Admins create driver accounts through a callable function. Only a superadmin can change a user's signed role claim. Firestore rules independently enforce access even if someone bypasses the page navigation.
 
 ## Trusted functions
 
