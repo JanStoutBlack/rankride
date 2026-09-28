@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { StatusBadge } from '@/components/StatusBadge';
 import { toast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
+import { firebaseClient as supabase } from '@/integrations/firebase/client';
 import { Wrench, Loader2, AlertTriangle } from 'lucide-react';
 import { format } from 'date-fns';
 
