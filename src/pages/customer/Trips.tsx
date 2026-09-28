@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { StatusBadge } from '@/components/StatusBadge';
 import { QRCodeDisplay } from '@/components/QRCodeDisplay';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { supabase } from '@/integrations/supabase/client';
+import { firebaseClient as supabase } from '@/integrations/firebase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { ClipboardList, QrCode, MapPin, Car, Calendar, Ticket } from 'lucide-react';
 import { format } from 'date-fns';

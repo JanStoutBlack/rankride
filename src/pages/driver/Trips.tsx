@@ -3,7 +3,7 @@ import { AppLayout } from '@/components/AppLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { StatusBadge } from '@/components/StatusBadge';
-import { supabase } from '@/integrations/supabase/client';
+import { firebaseClient as supabase } from '@/integrations/firebase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from '@/hooks/use-toast';
 import { ClipboardList, User, MapPin, Play, CheckCircle, XCircle, Loader2 } from 'lucide-react';

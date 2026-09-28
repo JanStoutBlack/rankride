@@ -24,14 +24,13 @@ const driverNav: NavItem[] = [
   { path: '/driver/qr', label: 'My QR code', shortLabel: 'My QR', icon: QrCode },
 ];
 const adminNav: NavItem[] = [
-  { path: '/owner/dashboard', label: 'Dashboard', shortLabel: 'Home', icon: LayoutDashboard },
-  { path: '/owner/vehicles', label: 'Vehicles', shortLabel: 'Vehicles', icon: Car },
-  { path: '/owner/drivers', label: 'Drivers', shortLabel: 'Drivers', icon: Users },
-  { path: '/owner/maintenance', label: 'Maintenance', shortLabel: 'Issues', icon: Wrench },
+  { path: '/admin/dashboard', label: 'Dashboard', shortLabel: 'Home', icon: LayoutDashboard },
+  { path: '/admin/vehicles', label: 'Vehicles', shortLabel: 'Vehicles', icon: Car },
+  { path: '/admin/drivers', label: 'Drivers', shortLabel: 'Drivers', icon: Users },
+  { path: '/admin/maintenance', label: 'Maintenance', shortLabel: 'Issues', icon: Wrench },
 ];
 const navItems: Record<AppRole, NavItem[]> = {
-  rider: riderNav, customer: riderNav, driver: driverNav,
-  admin: adminNav, superadmin: adminNav, owner: adminNav,
+  rider: riderNav, driver: driverNav, admin: adminNav, superadmin: adminNav,
 };
 
 export function AppLayout({ children }: AppLayoutProps) {

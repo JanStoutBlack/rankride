@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { StatusBadge } from '@/components/StatusBadge';
 import { toast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
+import { firebaseClient as supabase } from '@/integrations/firebase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { ScanLine, Check, X, Loader2, User, MapPin, Shield } from 'lucide-react';
 
